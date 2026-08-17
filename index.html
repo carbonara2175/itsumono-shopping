@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f7f3ea" />
+    <title>いつもの買い物</title>
+    <link rel="stylesheet" href="style.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">MY SHOPPING LIST</p>
+          <h1>いつもの買い物</h1>
+          <p class="subtitle">今日必要なものを、忘れずに。</p>
+        </div>
+        <div class="bag-icon" aria-hidden="true">🛍️</div>
+      </header>
+
+      <section class="card add-card" aria-labelledby="add-heading">
+        <h2 id="add-heading">買うものを追加</h2>
+        <form id="add-item-form" class="add-form">
+          <label class="visually-hidden" for="item-name">商品名</label>
+          <input id="item-name" name="itemName" type="text" maxlength="50"
+            placeholder="例）牛乳、じゃがいも" autocomplete="off" />
+          <button class="primary-button" type="submit">追加</button>
+        </form>
+        <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="list-section" aria-labelledby="list-heading">
+        <div class="section-heading">
+          <div class="heading-with-count">
+            <h2 id="list-heading">買い物リスト</h2>
+            <span id="item-count" class="count-badge">0</span>
+          </div>
+          <button id="delete-completed" class="text-button" type="button">購入済みを削除</button>
+        </div>
+        <ul id="shopping-list" class="shopping-list"></ul>
+        <div id="empty-state" class="empty-state">
+          <span aria-hidden="true">🧺</span>
+          <p>買うものはまだありません</p>
+          <small>上の入力欄から追加してください</small>
+        </div>
+      </section>
+
+      <section class="favorites-section" aria-labelledby="favorites-heading">
+        <div class="section-heading favorites-heading">
+          <div>
+            <p class="eyebrow">FAVORITES</p>
+            <h2 id="favorites-heading">いつもの商品</h2>
+          </div>
+          <p>よく追加する順</p>
+        </div>
+        <ul id="frequent-items" class="frequent-items"></ul>
+        <p id="favorites-empty" class="favorites-empty">商品を追加すると、よく買うものがここに並びます。</p>
+      </section>
+    </main>
+  </body>
+</html>
