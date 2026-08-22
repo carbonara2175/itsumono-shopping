@@ -22,9 +22,31 @@
       <section class="card add-card" aria-labelledby="add-heading">
         <h2 id="add-heading">買うものを追加</h2>
         <form id="add-item-form" class="add-form">
-          <label class="visually-hidden" for="item-name">商品名</label>
-          <input id="item-name" name="itemName" type="text" maxlength="50"
-            placeholder="例）牛乳、じゃがいも" autocomplete="off" />
+          <div class="form-field name-field">
+            <label for="item-name">商品名</label>
+            <input id="item-name" name="itemName" type="text" maxlength="50"
+              placeholder="例）牛乳、じゃがいも" autocomplete="off" />
+          </div>
+          <div class="form-field quantity-field">
+            <label for="item-quantity">数量（任意）</label>
+            <input id="item-quantity" name="itemQuantity" type="number" min="0" step="any"
+              inputmode="decimal" placeholder="例）2" autocomplete="off" />
+          </div>
+          <div class="form-field unit-field">
+            <label for="item-unit">単位</label>
+            <select id="item-unit" name="itemUnit">
+              <option value="">単位なし</option>
+              <option value="個">個</option>
+              <option value="本">本</option>
+              <option value="袋">袋</option>
+              <option value="パック">パック</option>
+              <option value="箱">箱</option>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="mL">mL</option>
+              <option value="L">L</option>
+            </select>
+          </div>
           <button class="primary-button" type="submit">追加</button>
         </form>
         <p id="form-message" class="form-message" role="status" aria-live="polite"></p>
