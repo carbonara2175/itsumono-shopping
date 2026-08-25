@@ -72,6 +72,10 @@ itsumono-shopping/
 ├── index.html  # 画面の構造と表示する文章
 ├── style.css   # 色、余白、レイアウト、スマートフォン表示などの見た目
 ├── script.js   # 商品の追加・購入済み・削除・履歴・保存・画面更新の処理
+├── supabase-test.html   # Phase 1の独立した接続テスト画面
+├── supabase-test.css    # 接続テスト画面専用の見た目
+├── supabase-test.js     # テスト商品の保存・取得・削除処理
+├── supabase-config.js   # Supabaseの接続情報（Publishable key）
 └── README.md   # アプリの説明と利用・開発の手引き（このファイル）
 ```
 
@@ -80,6 +84,10 @@ itsumono-shopping/
 | `index.html` | 入力フォーム、買い物リスト、「いつもの商品」など、ページの土台を定義します。`style.css`と`script.js`もここから読み込みます。 |
 | `style.css` | 配色、カード、ボタン、チェック済み商品の表示、空の状態、レスポンシブ表示、動きを減らすOS設定への配慮などを担当します。 |
 | `script.js` | 入力の検証、重複確認、商品の追加と状態変更、購入済み商品の削除、追加履歴の集計、DOMの再描画、`localStorage`への読み書きを担当します。 |
+| `supabase-test.html` | Phase 1でSupabaseへの接続を確認する、本番アプリとは独立したテスト画面です。 |
+| `supabase-test.css` | Supabase接続テスト画面だけの見た目を担当します。 |
+| `supabase-test.js` | 学習用テーブルに対する商品の保存・取得・削除を担当します。 |
+| `supabase-config.js` | テストで使用するProject URLとPublishable keyを設定します。 |
 | `README.md` | 初めて使う人やコードを読む人に向けて、仕様と操作方法を説明します。 |
 
 ## `localStorage`の仕組み
@@ -149,6 +157,30 @@ v1.1でも、v1.0の基本機能と使い心地を維持しています。
 - PWA対応によるホーム画面への追加とオフライン利用の強化
 - ダークモード、テーマ切り替え、多言語対応
 - 自動テストやCIを導入した品質チェック
+
+## v2.0開発 Phase 1：Supabase接続テスト
+
+### Phase 1の目的
+
+Phase 1は、GitHub Pages上の静的なWebページからSupabaseへ接続し、学習用の商品を保存・取得・削除できることを確かめるための実験です。認証、ログイン、家族共有、Realtime同期はまだ扱いません。
+
+Supabaseは、クラウド上でデータベースなどを利用できるサービスです。このPhaseでは、専用テーブル`phase1_test_items`だけを使用します。**現在の本番アプリは引き続き`localStorage`を使用しており、本物の買い物データはSupabaseへ移していません。** `index.html`の動作や既存データには影響しません。
+
+### テスト用ファイルの役割
+
+- `supabase-test.html`：本番の`index.html`とは独立した接続テスト画面です。商品名を1件ずつ保存し、Supabaseから取得した一覧の表示と削除ができます。ページを開くたびに一覧を取得し直します。
+- `supabase-config.js`：接続先のProject URLとPublishable keyを設定するファイルです。ファイル内の2つのプレースホルダーをSupabaseダッシュボードに表示される値へ置き換えます。
+- `supabase-test.js`：`@supabase/supabase-js` v2を使い、`phase1_test_items`への保存・取得・削除を行います。
+- `supabase-test.css`：スマートフォンでもテスト操作をしやすくする、このページ専用の見た目です。
+
+### 接続設定と安全上の注意
+
+1. Supabaseで`phase1_test_items`テーブル（`id`、`name`、`created_at`列）を用意します。
+2. テストに必要な`SELECT`、`INSERT`、`DELETE`だけを許可するRLSポリシーを設定します。Publishable keyだけではRLSを回避できないため、ポリシーがない場合は画面にエラーが表示されます。
+3. `supabase-config.js`の`YOUR_SUPABASE_URL`をProject URLへ、`YOUR_SUPABASE_PUBLISHABLE_KEY`をPublishable keyへ置き換えます。
+4. GitHub Pagesの`supabase-test.html`を開き、保存、再読み込み、削除を試します。
+
+Publishable keyはブラウザ側で使うための公開可能なキーです。ただし、データへのアクセス範囲は必ずSupabaseのRLSポリシーで制限してください。**管理者権限を持つSecret keyは、PublicなGitHubリポジトリへ絶対に書いてはいけません。** このテストにもSecret keyは不要です。
 
 ## 開発時のポイント
 

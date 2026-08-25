@@ -1,0 +1,41 @@
+:root {
+  color: #24362d;
+  background: #eef6f1;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 320px; }
+button, input { font: inherit; }
+.test-shell { width: min(100% - 32px, 640px); margin: 0 auto; padding: 36px 0 64px; }
+header { margin-bottom: 24px; }
+h1 { margin: 4px 0 8px; font-size: clamp(1.7rem, 8vw, 2.2rem); }
+h2 { margin: 0 0 18px; font-size: 1.15rem; }
+header p { margin: 0; color: #64746b; line-height: 1.7; }
+.phase-label { color: #367354; font-size: .72rem; font-weight: 800; letter-spacing: .12em; }
+.test-card { margin-bottom: 20px; padding: 22px; border: 1px solid #dce8e0; border-radius: 18px; background: #fff; box-shadow: 0 10px 28px rgba(45, 77, 60, .07); }
+label { display: block; margin-bottom: 7px; color: #56675e; font-size: .85rem; font-weight: 700; }
+.form-row { display: flex; gap: 10px; }
+input { min-width: 0; min-height: 50px; flex: 1; padding: 0 14px; border: 1.5px solid #cbd9d0; border-radius: 11px; }
+input:focus { border-color: #367354; outline: 3px solid #dcece3; }
+button { min-height: 46px; padding: 0 16px; border: 0; border-radius: 11px; color: #fff; background: #367354; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+button:disabled { opacity: .55; cursor: wait; }
+.secondary-button { min-height: 40px; color: #367354; background: #e6f0ea; font-size: .85rem; }
+.status-message { min-height: 1.4em; margin: 12px 0 0; font-size: .88rem; }
+.status-message.error { color: #a13e35; }
+.status-message.success { color: #26704b; }
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.section-title h2 { margin-bottom: 0; }
+#loading-message, #empty-message { margin: 22px 0 4px; color: #6b7971; }
+#cloud-items { margin: 18px 0 0; padding: 0; list-style: none; }
+#cloud-items li { display: flex; min-height: 54px; align-items: center; justify-content: space-between; gap: 12px; border-top: 1px solid #e3eae6; }
+.item-name { overflow-wrap: anywhere; font-weight: 600; }
+.delete-button { min-height: 38px; flex: 0 0 auto; padding: 0 12px; color: #a13e35; background: #faecea; font-size: .82rem; }
+.back-link { margin-top: 28px; text-align: center; }
+.back-link a { color: #367354; font-weight: 700; }
+@media (max-width: 480px) {
+  .test-shell { width: min(100% - 24px, 640px); padding-top: 24px; }
+  .test-card { padding: 18px; }
+  .form-row { flex-direction: column; }
+  .form-row button { width: 100%; min-height: 50px; }
+}
