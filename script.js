@@ -91,7 +91,19 @@ function createItemId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-// 入力欄からでも「いつもの商品」からでも、この関数を使って追加します。
+// 「いつもの商品」の前回値をフォームへ戻し、今回の数量を確認できるようにします。
+function prepareFrequentItem(name, quantity = "", unit = "") {
+  const cleanQuantity = normalizeQuantity(quantity);
+  itemNameInput.value = name;
+  itemQuantityInput.value = cleanQuantity;
+  itemUnitInput.value = cleanQuantity ? normalizeUnit(unit) : "";
+  formMessage.textContent = "";
+
+  addItemForm.scrollIntoView({ behavior: "smooth", block: "center" });
+  itemQuantityInput.focus({ preventScroll: true });
+}
+
+// 商品追加フォームで確定した内容を買い物リストへ追加します。
 function addItem(name, quantity = "", unit = "") {
   const cleanName = normalizeItemName(name);
   const cleanQuantity = normalizeQuantity(quantity);
@@ -192,8 +204,8 @@ function renderFrequentItems() {
     addButton.type = "button";
     addButton.textContent = "+";
     addButton.disabled = isAlreadyListed(name);
-    addButton.setAttribute("aria-label", `${name}を買い物リストに追加`);
-    addButton.addEventListener("click", () => addItem(name, history.lastQuantity, history.lastUnit));
+    addButton.setAttribute("aria-label", `${name}を商品追加フォームに入力`);
+    addButton.addEventListener("click", () => prepareFrequentItem(name, history.lastQuantity, history.lastUnit));
     listItem.append(itemInfo, addButton);
     frequentItemsElement.append(listItem);
   });
