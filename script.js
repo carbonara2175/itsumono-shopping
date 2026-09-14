@@ -4,10 +4,26 @@ const STORAGE_KEYS = {
   itemHistory: "itsumono-item-history-v1",
 };
 
+// 将来、売り場順を変更しやすいよう、選択肢と表示に使う順番をここで一元管理します。
+const CATEGORIES = [
+  "野菜・果物",
+  "肉類",
+  "魚介類",
+  "卵・乳製品",
+  "パン・麺・穀類",
+  "調味料・乾物",
+  "冷凍・加工食品",
+  "飲料・嗜好品",
+  "日用品",
+  "その他",
+];
+const DEFAULT_CATEGORY = "その他";
+
 const addItemForm = document.querySelector("#add-item-form");
 const itemNameInput = document.querySelector("#item-name");
 const itemQuantityInput = document.querySelector("#item-quantity");
 const itemUnitInput = document.querySelector("#item-unit");
+const itemCategoryInput = document.querySelector("#item-category");
 const formMessage = document.querySelector("#form-message");
 const shoppingListElement = document.querySelector("#shopping-list");
 const emptyState = document.querySelector("#empty-state");
@@ -15,6 +31,13 @@ const itemCount = document.querySelector("#item-count");
 const deleteCompletedButton = document.querySelector("#delete-completed");
 const frequentItemsElement = document.querySelector("#frequent-items");
 const favoritesEmpty = document.querySelector("#favorites-empty");
+
+CATEGORIES.forEach((category) => {
+  const option = document.createElement("option");
+  option.value = category;
+  option.textContent = category;
+  itemCategoryInput.append(option);
+});
 
 // 保存済みデータを読み込みます。初回利用時や不正なデータの場合は初期値を返します。
 function loadFromStorage(key, defaultValue) {
@@ -42,6 +65,7 @@ shoppingItems = shoppingItems
     name: normalizeItemName(item.name),
     quantity: normalizeQuantity(item.quantity),
     unit: normalizeQuantity(item.quantity) ? normalizeUnit(item.unit) : "",
+    category: normalizeCategory(item.category),
     completed: Boolean(item.completed),
   }));
 itemHistory = Object.fromEntries(Object.entries(itemHistory)
@@ -53,6 +77,7 @@ itemHistory = Object.fromEntries(Object.entries(itemHistory)
       count: Number(data.count) || 0,
       lastQuantity,
       lastUnit: lastQuantity ? normalizeUnit(data.lastUnit) : "",
+      lastCategory: normalizeCategory(data.lastCategory),
     }];
   }));
 
@@ -75,8 +100,12 @@ function normalizeQuantity(quantity) {
 }
 
 function normalizeUnit(unit) {
-  const allowedUnits = ["個", "本", "袋", "パック", "箱", "g", "kg", "mL", "L"];
+  const allowedUnits = ["個", "本", "袋", "パック", "箱", "切", "g", "kg", "mL", "L"];
   return allowedUnits.includes(unit) ? unit : "";
+}
+
+function normalizeCategory(category) {
+  return CATEGORIES.includes(category) ? category : DEFAULT_CATEGORY;
 }
 
 function formatAmount(quantity, unit) {
@@ -92,11 +121,12 @@ function createItemId() {
 }
 
 // 「いつもの商品」の前回値をフォームへ戻し、今回の数量を確認できるようにします。
-function prepareFrequentItem(name, quantity = "", unit = "") {
+function prepareFrequentItem(name, quantity = "", unit = "", category = DEFAULT_CATEGORY) {
   const cleanQuantity = normalizeQuantity(quantity);
   itemNameInput.value = name;
   itemQuantityInput.value = cleanQuantity;
   itemUnitInput.value = cleanQuantity ? normalizeUnit(unit) : "";
+  itemCategoryInput.value = normalizeCategory(category);
   formMessage.textContent = "";
 
   addItemForm.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -104,10 +134,11 @@ function prepareFrequentItem(name, quantity = "", unit = "") {
 }
 
 // 商品追加フォームで確定した内容を買い物リストへ追加します。
-function addItem(name, quantity = "", unit = "") {
+function addItem(name, quantity = "", unit = "", category = DEFAULT_CATEGORY) {
   const cleanName = normalizeItemName(name);
   const cleanQuantity = normalizeQuantity(quantity);
   const cleanUnit = cleanQuantity ? normalizeUnit(unit) : "";
+  const cleanCategory = normalizeCategory(category);
   formMessage.textContent = "";
 
   if (!cleanName) {
@@ -119,12 +150,13 @@ function addItem(name, quantity = "", unit = "") {
     return false;
   }
 
-  shoppingItems.push({ id: createItemId(), name: cleanName, quantity: cleanQuantity, unit: cleanUnit, completed: false });
+  shoppingItems.push({ id: createItemId(), name: cleanName, quantity: cleanQuantity, unit: cleanUnit, category: cleanCategory, completed: false });
   const previousHistory = itemHistory[cleanName];
   itemHistory[cleanName] = {
     count: (Number(previousHistory?.count) || 0) + 1,
     lastQuantity: cleanQuantity,
     lastUnit: cleanUnit,
+    lastCategory: cleanCategory,
   };
   saveData();
   renderApp();
@@ -149,26 +181,42 @@ function deleteCompletedItems() {
 function renderShoppingList() {
   shoppingListElement.replaceChildren();
 
-  shoppingItems.forEach((item) => {
-    const listItem = document.createElement("li");
-    listItem.className = `shopping-item${item.completed ? " completed" : ""}`;
+  CATEGORIES.forEach((category) => {
+    const categoryItems = shoppingItems.filter((item) => item.category === category);
+    if (categoryItems.length === 0) return;
 
-    const label = document.createElement("label");
-    label.className = "item-label";
-    const checkbox = document.createElement("input");
-    checkbox.className = "item-checkbox";
-    checkbox.type = "checkbox";
-    checkbox.checked = Boolean(item.completed);
-    checkbox.setAttribute("aria-label", `${item.name}を購入済みにする`);
-    checkbox.addEventListener("change", () => toggleItem(item.id));
-    const name = document.createElement("span");
-    name.className = "item-name";
-    const amount = formatAmount(item.quantity, item.unit);
-    name.textContent = amount ? `${item.name}　${amount}` : item.name;
+    const categoryGroup = document.createElement("li");
+    categoryGroup.className = "category-group";
+    const categoryHeading = document.createElement("h3");
+    categoryHeading.className = "category-heading";
+    categoryHeading.textContent = category;
+    const categoryList = document.createElement("ul");
+    categoryList.className = "category-items";
 
-    label.append(checkbox, name);
-    listItem.append(label);
-    shoppingListElement.append(listItem);
+    categoryItems.forEach((item) => {
+      const listItem = document.createElement("li");
+      listItem.className = `shopping-item${item.completed ? " completed" : ""}`;
+
+      const label = document.createElement("label");
+      label.className = "item-label";
+      const checkbox = document.createElement("input");
+      checkbox.className = "item-checkbox";
+      checkbox.type = "checkbox";
+      checkbox.checked = Boolean(item.completed);
+      checkbox.setAttribute("aria-label", `${item.name}を購入済みにする`);
+      checkbox.addEventListener("change", () => toggleItem(item.id));
+      const name = document.createElement("span");
+      name.className = "item-name";
+      const amount = formatAmount(item.quantity, item.unit);
+      name.textContent = amount ? `${item.name}　${amount}` : item.name;
+
+      label.append(checkbox, name);
+      listItem.append(label);
+      categoryList.append(listItem);
+    });
+
+    categoryGroup.append(categoryHeading, categoryList);
+    shoppingListElement.append(categoryGroup);
   });
 
   emptyState.classList.toggle("hidden", shoppingItems.length > 0);
@@ -205,7 +253,7 @@ function renderFrequentItems() {
     addButton.textContent = "+";
     addButton.disabled = isAlreadyListed(name);
     addButton.setAttribute("aria-label", `${name}を商品追加フォームに入力`);
-    addButton.addEventListener("click", () => prepareFrequentItem(name, history.lastQuantity, history.lastUnit));
+    addButton.addEventListener("click", () => prepareFrequentItem(name, history.lastQuantity, history.lastUnit, history.lastCategory));
     listItem.append(itemInfo, addButton);
     frequentItemsElement.append(listItem);
   });
@@ -220,10 +268,11 @@ function renderApp() {
 
 addItemForm.addEventListener("submit", (event) => {
   event.preventDefault();
-  if (addItem(itemNameInput.value, itemQuantityInput.value, itemUnitInput.value)) {
+  if (addItem(itemNameInput.value, itemQuantityInput.value, itemUnitInput.value, itemCategoryInput.value)) {
     itemNameInput.value = "";
     itemQuantityInput.value = "";
     itemUnitInput.value = "";
+    itemCategoryInput.value = "";
   }
   itemNameInput.focus();
 });
