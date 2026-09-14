@@ -65,7 +65,8 @@ h2 { margin-bottom: 14px; font-size: 1.15rem; }
   box-shadow: var(--shadow);
 }
 
-.add-form { display: grid; grid-template-columns: minmax(0, 1fr) 110px 120px auto; gap: 10px; align-items: end; }
+.add-form { display: grid; grid-template-columns: minmax(0, 1fr) 100px 110px; gap: 10px; align-items: end; }
+.category-field { grid-column: 1 / 3; }
 .form-field { display: grid; gap: 6px; min-width: 0; }
 .form-field label { color: var(--muted); font-size: 0.78rem; font-weight: 700; }
 .add-form input, .add-form select {
@@ -93,6 +94,7 @@ h2 { margin-bottom: 14px; font-size: 1.15rem; }
   font-weight: 700;
   cursor: pointer;
 }
+.add-form .primary-button { grid-column: 3; }
 .primary-button:hover { background: var(--green-dark); }
 .primary-button:active { transform: translateY(1px); }
 .form-message { min-height: 1.2em; margin: 8px 2px -8px; color: var(--danger); font-size: 0.82rem; }
@@ -105,6 +107,10 @@ h2 { margin-bottom: 14px; font-size: 1.15rem; }
 .text-button:disabled { color: #a9ada9; cursor: default; }
 
 .shopping-list, .frequent-items { margin: 0; padding: 0; list-style: none; }
+.category-group { margin-top: 20px; }
+.category-group:first-child { margin-top: 0; }
+.category-heading { margin: 0; padding: 9px 12px; border-radius: 10px; color: var(--green-dark); background: var(--green-soft); font-size: 0.9rem; letter-spacing: 0.02em; }
+.category-items { margin: 0; padding: 0; list-style: none; }
 .shopping-item { display: flex; align-items: center; min-height: 58px; border-bottom: 1px solid var(--border); }
 .shopping-item:first-child { border-top: 1px solid var(--border); }
 .item-label { display: flex; width: 100%; min-height: 58px; align-items: center; gap: 13px; cursor: pointer; }
@@ -139,7 +145,7 @@ h2 { margin-bottom: 14px; font-size: 1.15rem; }
   .card { padding: 18px; }
   .add-form { grid-template-columns: minmax(0, 1fr) minmax(110px, 0.8fr); gap: 10px 8px; }
   .name-field { grid-column: 1 / -1; }
-  .primary-button { grid-column: 1 / -1; }
+  .category-field, .add-form .primary-button { grid-column: 1 / -1; }
   .primary-button { min-width: 0; padding: 0 12px; }
 }
 
