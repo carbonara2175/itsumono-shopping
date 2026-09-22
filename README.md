@@ -81,7 +81,8 @@ itsumono-shopping/
 ├── supabase-test.js     # テスト商品の保存・取得・削除処理
 ├── supabase-config.js   # Supabaseの接続情報（Publishable key）
 ├── supabase/
-│   └── 001_create_households.sql  # 家族グループ用テーブルを作成するSQL
+│   ├── 001_create_households.sql          # 家族グループ用テーブルを作成するSQL
+│   └── 002_create_household_members.sql   # 家族に所属するユーザーを管理するSQL
 └── README.md   # アプリの説明と利用・開発の手引き（このファイル）
 ```
 
@@ -95,6 +96,7 @@ itsumono-shopping/
 | `supabase-test.js` | 学習用テーブルに対する商品の保存・取得・削除を担当します。 |
 | `supabase-config.js` | テストで使用するProject URLとPublishable keyを設定します。 |
 | `supabase/001_create_households.sql` | v2.0で使う家族グループ用の`households`テーブルを作成し、RLSを有効にします。 |
+| `supabase/002_create_household_members.sql` | v2.0で家族グループとSupabase Authのユーザーを結び付ける`household_members`テーブルを作成し、RLSを有効にします。 |
 | `README.md` | 初めて使う人やコードを読む人に向けて、仕様と操作方法を説明します。 |
 
 ## `localStorage`の仕組み
@@ -191,6 +193,22 @@ RLS（行単位でデータへのアクセスを制限する仕組み）は有�
 5. 「Table Editor」で`households`テーブルを開き、必要に応じて`name`へ「わが家」と入力して1件を手動登録します。`id`と`created_at`は自動で入るため、入力は不要です。
 
 SQLはテーブル作成とRLSの有効化だけを行い、テストデータは自動登録しません。また、Secret key、service_role key、パスワードなどの秘密情報も含みません。
+
+## v2.0共有機能の準備：家族メンバー
+
+共有機能の第2段階として、`household_members`テーブルを追加するSQLを用意しました。`households`が「家族そのもの」を表すのに対し、`household_members`は「その家族に誰が所属しているか」を表します。
+
+- `household_id`：家族を識別するIDです。`households`テーブルの`id`を参照します。
+- `user_id`：Supabase Authで作られるユーザーIDです。Authの`users`に登録されたユーザーを参照します。
+- `created_at`：ユーザーが家族へ登録された日時です。登録時に自動で記録されます。
+
+`household_id`と`user_id`の組み合わせが主キーなので、同じユーザーを同じ家族へ重複して登録することはできません。また、`user_id`には検索用のindexがあり、ユーザーが所属する家族を探しやすくしています。将来、夫婦2人を同じhouseholdへ登録することで、2人が同じ買い物リストを共有できるようになる予定です。
+
+このテーブルでもRLSは有効ですが、RLSポリシーはまだ作成していません。Supabase Authでユーザーを作成した後のステップで、自分が所属しているhouseholdを確認し、そのhouseholdの買い物データだけを操作できるポリシーを設定します。今回はユーザーがまだ存在しないため、INSERT文やテストデータも含めていません。
+
+### 家族メンバー用SQLの実行方法
+
+先に`supabase/001_create_households.sql`を実行して`households`テーブルを作成してから、SupabaseのSQL Editorへ`supabase/002_create_household_members.sql`の内容を貼り付けて実行します。この段階ではメンバーを手動登録する必要はありません。
 
 ## v2.0開発 Phase 1：Supabase接続テスト
 
