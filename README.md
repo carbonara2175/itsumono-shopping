@@ -80,6 +80,8 @@ itsumono-shopping/
 ├── supabase-test.css    # 接続テスト画面専用の見た目
 ├── supabase-test.js     # テスト商品の保存・取得・削除処理
 ├── supabase-config.js   # Supabaseの接続情報（Publishable key）
+├── supabase/
+│   └── 001_create_households.sql  # 家族グループ用テーブルを作成するSQL
 └── README.md   # アプリの説明と利用・開発の手引き（このファイル）
 ```
 
@@ -92,6 +94,7 @@ itsumono-shopping/
 | `supabase-test.css` | Supabase接続テスト画面だけの見た目を担当します。 |
 | `supabase-test.js` | 学習用テーブルに対する商品の保存・取得・削除を担当します。 |
 | `supabase-config.js` | テストで使用するProject URLとPublishable keyを設定します。 |
+| `supabase/001_create_households.sql` | v2.0で使う家族グループ用の`households`テーブルを作成し、RLSを有効にします。 |
 | `README.md` | 初めて使う人やコードを読む人に向けて、仕様と操作方法を説明します。 |
 
 ## `localStorage`の仕組み
@@ -168,6 +171,26 @@ v1.1でも、v1.0の基本機能と使い心地を維持しています。
 - PWA対応によるホーム画面への追加とオフライン利用の強化
 - ダークモード、テーマ切り替え、多言語対応
 - 自動テストやCIを導入した品質チェック
+
+## v2.0共有機能の準備：家族グループ
+
+v2.0共有機能開発の準備として、Supabaseに`households`テーブルを追加するSQLを用意しました。`households`は、夫婦が買い物リストを共有するときの「家族グループ」を表すテーブルです。
+
+- `id`：家族グループを識別する番号です。登録時にUUIDが自動で作られます。
+- `name`：「わが家」など、家族グループの表示名です。
+- `created_at`：家族グループを作成した日時です。登録時に自動で記録されます。
+
+RLS（行単位でデータへのアクセスを制限する仕組み）は有効ですが、アクセス許可ルール（RLSポリシー）はまだ設定していません。そのため、ブラウザからこのテーブルを利用する段階ではありません。今後、`household_members`とSupabase Authを用意してから、所属する家族だけがアクセスできるルールを追加します。
+
+### SQLの実行方法
+
+1. Supabaseのダッシュボードで対象プロジェクトを開きます。
+2. 左側のメニューから「SQL Editor」を開き、「New query」を選びます。
+3. `supabase/001_create_households.sql`の内容をすべてコピーし、SQL Editorへ貼り付けます。
+4. 「Run」を押して実行します。
+5. 「Table Editor」で`households`テーブルを開き、必要に応じて`name`へ「わが家」と入力して1件を手動登録します。`id`と`created_at`は自動で入るため、入力は不要です。
+
+SQLはテーブル作成とRLSの有効化だけを行い、テストデータは自動登録しません。また、Secret key、service_role key、パスワードなどの秘密情報も含みません。
 
 ## v2.0開発 Phase 1：Supabase接続テスト
 
