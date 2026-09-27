@@ -76,6 +76,9 @@ itsumono-shopping/
 ├── index.html  # 画面の構造と表示する文章
 ├── style.css   # 色、余白、レイアウト、スマートフォン表示などの見た目
 ├── script.js   # 商品の追加・購入済み・削除・履歴・保存・画面更新の処理
+├── auth.html            # 招待されたユーザーのパスワード設定画面
+├── auth.css             # パスワード設定画面専用の見た目
+├── auth.js              # 招待セッション確認とパスワード設定処理
 ├── supabase-test.html   # Phase 1の独立した接続テスト画面
 ├── supabase-test.css    # 接続テスト画面専用の見た目
 ├── supabase-test.js     # テスト商品の保存・取得・削除処理
@@ -91,6 +94,9 @@ itsumono-shopping/
 | `index.html` | 入力フォーム、買い物リスト、「いつもの商品」など、ページの土台を定義します。`style.css`と`script.js`もここから読み込みます。 |
 | `style.css` | 配色、カード、ボタン、チェック済み商品の表示、空の状態、レスポンシブ表示、動きを減らすOS設定への配慮などを担当します。 |
 | `script.js` | 入力の検証、重複確認、商品の追加と状態変更、購入済み商品の削除、追加履歴の集計、DOMの再描画、`localStorage`への読み書きを担当します。 |
+| `auth.html` | Supabaseの招待メールから開き、招待されたユーザーがパスワードを設定する独立した画面です。 |
+| `auth.css` | パスワード設定画面のスマートフォン向けの見た目を担当します。 |
+| `auth.js` | 有効な認証セッションを確認し、Supabase Authへ新しいパスワードを設定します。 |
 | `supabase-test.html` | Phase 1でSupabaseへの接続を確認する、本番アプリとは独立したテスト画面です。 |
 | `supabase-test.css` | Supabase接続テスト画面だけの見た目を担当します。 |
 | `supabase-test.js` | 学習用テーブルに対する商品の保存・取得・削除を担当します。 |
@@ -175,6 +181,17 @@ v1.1でも、v1.0の基本機能と使い心地を維持しています。
 - 自動テストやCIを導入した品質チェック
 
 ## v2.0共有機能の準備：家族グループ
+
+### 招待ユーザーのパスワード設定画面
+
+招待されたユーザーは、GitHub Pages上の`https://carbonara2175.github.io/itsumono-shopping/auth.html`でパスワードを設定できます。使用前に次の準備が必要です。
+
+1. `supabase-config.js`のプレースホルダーを、SupabaseのProject URLと`sb_publishable_...`形式のPublishable keyへ置き換えます。
+2. Supabaseダッシュボードの「Authentication → URL Configuration」を開きます。
+3. Redirect URLsへ`https://carbonara2175.github.io/itsumono-shopping/auth.html`を追加します。
+4. ユーザーを招待するときのリダイレクト先にも上記URLを指定します。
+
+ブラウザで使用するのはPublishable keyだけです。Secret keyや`service_role` keyは使用しないでください。`auth.html`は既存の買い物画面とは独立しており、買い物データや`localStorage`を変更しません。
 
 v2.0共有機能開発の準備として、Supabaseに`households`テーブルを追加するSQLを用意しました。`households`は、夫婦が買い物リストを共有するときの「家族グループ」を表すテーブルです。
 
