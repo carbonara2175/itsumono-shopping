@@ -85,7 +85,8 @@ itsumono-shopping/
 ├── supabase-config.js   # Supabaseの接続情報（Publishable key）
 ├── supabase/
 │   ├── 001_create_households.sql          # 家族グループ用テーブルを作成するSQL
-│   └── 002_create_household_members.sql   # 家族に所属するユーザーを管理するSQL
+│   ├── 002_create_household_members.sql   # 家族に所属するユーザーを管理するSQL
+│   └── 003_create_shopping_items.sql      # 共有買い物リスト用テーブルを作成するSQL
 └── README.md   # アプリの説明と利用・開発の手引き（このファイル）
 ```
 
@@ -103,6 +104,7 @@ itsumono-shopping/
 | `supabase-config.js` | テストで使用するProject URLとPublishable keyを設定します。 |
 | `supabase/001_create_households.sql` | v2.0で使う家族グループ用の`households`テーブルを作成し、RLSを有効にします。 |
 | `supabase/002_create_household_members.sql` | v2.0で家族グループとSupabase Authのユーザーを結び付ける`household_members`テーブルを作成し、RLSを有効にします。 |
+| `supabase/003_create_shopping_items.sql` | v2.0で家族が共有する現在の買い物リスト用の`shopping_items`テーブルを作成し、RLSを有効にします。 |
 | `README.md` | 初めて使う人やコードを読む人に向けて、仕様と操作方法を説明します。 |
 
 ## `localStorage`の仕組み
@@ -226,6 +228,18 @@ SQLはテーブル作成とRLSの有効化だけを行い、テストデータ�
 ### 家族メンバー用SQLの実行方法
 
 先に`supabase/001_create_households.sql`を実行して`households`テーブルを作成してから、SupabaseのSQL Editorへ`supabase/002_create_household_members.sql`の内容を貼り付けて実行します。この段階ではメンバーを手動登録する必要はありません。
+
+## v2.0共有機能の準備：共有買い物リスト
+
+`shopping_items`は、夫婦で共有する「現在の買い物リスト」を保存するテーブルです。`household_id`で「どの家族の商品か」を区別し、商品名、数量、単位、カテゴリ、購入済み状態を保存します。`created_by`には商品を追加したユーザーを記録でき、`created_at`と`updated_at`で作成・更新日時を管理します。`updated_at`は行の更新時に自動的に新しくなります。
+
+RLSは有効ですが、アクセスを許可するRLSポリシーはまだありません。ログイン済みユーザー用のテーブル操作権限は準備していますが、次のステップで家族への所属を確認するRLSポリシーを作るまで、ブラウザから行を操作できません。
+
+**現在の本番アプリは、まだ`localStorage`を使用しています。** このSQLを追加・実行するだけでは、夫婦での買い物リスト共有は開始されず、既存の画面やブラウザ内のデータにも影響しません。
+
+### 共有買い物リスト用SQLの実行方法
+
+`supabase/001_create_households.sql`と`supabase/002_create_household_members.sql`を先に実行した後、SupabaseのSQL Editorへ`supabase/003_create_shopping_items.sql`の内容を貼り付けて実行します。このSQLはテーブルと更新日時用のトリガー、index、権限設定だけを作成し、テスト商品は登録しません。
 
 ## v2.0開発 Phase 1：Supabase接続テスト
 
