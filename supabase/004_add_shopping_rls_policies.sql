@@ -21,6 +21,9 @@ $$;
 revoke all on function private.is_household_member(uuid) from public;
 grant execute on function private.is_household_member(uuid) to authenticated;
 
+grant select on table public.households to authenticated;
+grant select on table public.household_members to authenticated;
+
 create policy "Household members can view their household"
 on public.households
 for select
