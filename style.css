@@ -56,6 +56,35 @@ h2 { margin-bottom: 14px; font-size: 1.15rem; }
 .subtitle { margin-bottom: 0; color: var(--muted); font-size: 0.9rem; }
 .bag-icon { display: grid; width: 58px; height: 58px; place-items: center; border-radius: 19px; background: var(--surface); box-shadow: var(--shadow); font-size: 1.65rem; transform: rotate(3deg); }
 
+.cloud-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin: -12px 4px 24px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255, 253, 249, 0.72);
+}
+.cloud-status p { margin: 0; }
+.cloud-status-title { font-size: 0.86rem; font-weight: 800; }
+.cloud-status-note { margin-top: 3px !important; color: var(--muted); font-size: 0.7rem; line-height: 1.4; }
+.cloud-action {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 10px;
+  color: var(--green-dark);
+  background: var(--green-soft);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+.cloud-action:disabled { cursor: wait; opacity: 0.65; }
+
 .card {
   margin-bottom: 34px;
   padding: 22px;
@@ -141,6 +170,7 @@ h2 { margin-bottom: 14px; font-size: 1.15rem; }
 @media (max-width: 420px) {
   .app-shell { padding: 22px 16px 48px; }
   .app-header { margin-bottom: 22px; }
+  .cloud-status { margin-top: -8px; }
   .bag-icon { width: 52px; height: 52px; }
   .card { padding: 18px; }
   .add-form { grid-template-columns: minmax(0, 1fr) minmax(110px, 0.8fr); gap: 10px 8px; }

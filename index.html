@@ -7,6 +7,9 @@
     <title>いつもの買い物</title>
     <link rel="stylesheet" href="style.css" />
     <script src="script.js" defer></script>
+    <script src="supabase-config.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+    <script src="cloud-session.js" defer></script>
   </head>
   <body>
     <main class="app-shell">
@@ -18,6 +21,15 @@
         </div>
         <div class="bag-icon" aria-hidden="true">🛍️</div>
       </header>
+
+      <section class="cloud-status" aria-label="アカウントとクラウド接続状態">
+        <div>
+          <p id="cloud-status-title" class="cloud-status-title">接続状態を確認中…</p>
+          <p id="cloud-status-note" class="cloud-status-note">買い物データはまだこの端末に保存されています</p>
+        </div>
+        <a id="login-link" class="cloud-action" href="login.html" hidden>ログイン</a>
+        <button id="logout-button" class="cloud-action" type="button" hidden>ログアウト</button>
+      </section>
 
       <section class="card add-card" aria-labelledby="add-heading">
         <h2 id="add-heading">買うものを追加</h2>
