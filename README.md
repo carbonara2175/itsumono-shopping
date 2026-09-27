@@ -86,7 +86,9 @@ itsumono-shopping/
 ├── supabase/
 │   ├── 001_create_households.sql          # 家族グループ用テーブルを作成するSQL
 │   ├── 002_create_household_members.sql   # 家族に所属するユーザーを管理するSQL
-│   └── 003_create_shopping_items.sql      # 共有買い物リスト用テーブルを作成するSQL
+│   ├── 003_create_shopping_items.sql      # 共有買い物リスト用テーブルを作成するSQL
+│   ├── 004_add_shopping_rls_policies.sql  # 共有テーブルへ家族単位のRLSを設定するSQL
+│   └── 005_create_item_history.sql        # 「いつもの商品」の共有履歴を作成するSQL
 └── README.md   # アプリの説明と利用・開発の手引き（このファイル）
 ```
 
@@ -105,6 +107,8 @@ itsumono-shopping/
 | `supabase/001_create_households.sql` | v2.0で使う家族グループ用の`households`テーブルを作成し、RLSを有効にします。 |
 | `supabase/002_create_household_members.sql` | v2.0で家族グループとSupabase Authのユーザーを結び付ける`household_members`テーブルを作成し、RLSを有効にします。 |
 | `supabase/003_create_shopping_items.sql` | v2.0で家族が共有する現在の買い物リスト用の`shopping_items`テーブルを作成し、RLSを有効にします。 |
+| `supabase/004_add_shopping_rls_policies.sql` | 家族への所属を確認し、同じ家族のデータだけを操作できるRLSポリシーを設定します。 |
+| `supabase/005_create_item_history.sql` | v2.0で「いつもの商品」を家族が共有するための`item_history`テーブル、RLS、権限を設定します。 |
 | `README.md` | 初めて使う人やコードを読む人に向けて、仕様と操作方法を説明します。 |
 
 ## `localStorage`の仕組み
@@ -240,6 +244,18 @@ RLSは有効ですが、アクセスを許可するRLSポリシーはまだあ�
 ### 共有買い物リスト用SQLの実行方法
 
 `supabase/001_create_households.sql`と`supabase/002_create_household_members.sql`を先に実行した後、SupabaseのSQL Editorへ`supabase/003_create_shopping_items.sql`の内容を貼り付けて実行します。このSQLはテーブルと更新日時用のトリガー、index、権限設定だけを作成し、テスト商品は登録しません。
+
+## v2.0共有機能の準備：いつもの商品履歴
+
+`item_history`は、「いつもの商品」の履歴を夫婦で共有するためのテーブルです。商品を買い物リストへ追加した累計回数を`count`へ保存し、最後に入力した数量・単位・カテゴリを`last_quantity`、`last_unit`、`last_category`へ前回値として保存します。これにより、将来は夫婦のどちらが使っても、よく追加する商品と前回の入力内容を同じ履歴から呼び出せるようになります。
+
+同じ家族に同じ商品名の履歴が複数できないよう、`household_id + name`の組み合わせは重複できません。RLSと権限設定により、ログインしたユーザーは同じ家族の履歴だけを読み書きできます。履歴の削除権限は、この段階では用意していません。
+
+**現在の本番アプリは、まだ`localStorage`を使用しています。** `item_history`を作成しても本番画面はSupabaseへ接続されず、ブラウザに保存済みの買い物リストや履歴も変更されません。Supabaseへの接続や既存履歴の移行は、今後の段階で行います。
+
+### いつもの商品履歴用SQLの実行方法
+
+`supabase/001_create_households.sql`から`supabase/004_add_shopping_rls_policies.sql`までを番号順に実行した後、SupabaseのSQL Editorへ`supabase/005_create_item_history.sql`の内容を貼り付けて実行します。このSQLはテーブル、更新日時用のトリガー、index、家族単位のRLSポリシー、必要最小限の権限だけを作成し、テスト履歴は登録しません。
 
 ## v2.0開発 Phase 1：Supabase接続テスト
 
