@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アカウント設定 | いつもの買い物</title>
+  <link rel="stylesheet" href="auth.css">
+</head>
+<body>
+  <main class="auth-card" aria-labelledby="auth-title">
+    <p class="app-name">いつもの買い物</p>
+    <h1 id="auth-title">アカウント設定</h1>
+    <p class="instruction">パスワードを設定してください</p>
+
+    <div id="status" class="status" role="status" aria-live="polite">
+      招待情報を確認しています…
+    </div>
+
+    <form id="password-form" hidden novalidate>
+      <label for="password">パスワード</label>
+      <input id="password" name="password" type="password" minlength="6"
+        autocomplete="new-password" required>
+
+      <label for="password-confirmation">パスワード確認</label>
+      <input id="password-confirmation" name="password-confirmation" type="password"
+        minlength="6" autocomplete="new-password" required>
+
+      <button id="submit-button" type="submit">パスワードを設定する</button>
+    </form>
+
+    <a id="shopping-link" class="shopping-link" href="index.html" hidden>
+      買い物リストへ進む
+    </a>
+  </main>
+
+  <script src="supabase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="auth.js"></script>
+</body>
+</html>
