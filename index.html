@@ -31,6 +31,13 @@
         <button id="logout-button" class="cloud-action" type="button" hidden>ログアウト</button>
       </section>
 
+      <section id="local-import" class="local-import" aria-label="この端末の買い物リストの取り込み" hidden>
+        <button id="import-local-list" class="local-import-button" type="button">
+          この端末のリストを共有リストへ取り込む
+        </button>
+        <p id="import-result" class="local-import-result" role="status" aria-live="polite"></p>
+      </section>
+
       <section class="card add-card" aria-labelledby="add-heading">
         <h2 id="add-heading">買うものを追加</h2>
         <form id="add-item-form" class="add-form">

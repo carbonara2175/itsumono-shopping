@@ -31,6 +31,9 @@ const itemCount = document.querySelector("#item-count");
 const deleteCompletedButton = document.querySelector("#delete-completed");
 const frequentItemsElement = document.querySelector("#frequent-items");
 const favoritesEmpty = document.querySelector("#favorites-empty");
+const localImportSection = document.querySelector("#local-import");
+const importLocalListButton = document.querySelector("#import-local-list");
+const importResult = document.querySelector("#import-result");
 
 CATEGORIES.forEach((category) => {
   const option = document.createElement("option");
@@ -118,7 +121,8 @@ function formatAmount(quantity, unit) {
 }
 
 function isAlreadyListed(name) {
-  return shoppingItems.some((item) => item.name.toLocaleLowerCase("ja") === name.toLocaleLowerCase("ja"));
+  const normalizedName = normalizeItemName(name).toLocaleLowerCase("ja");
+  return shoppingItems.some((item) => normalizeItemName(item.name).toLocaleLowerCase("ja") === normalizedName);
 }
 
 function createItemId() {
@@ -241,6 +245,51 @@ function normalizeCloudItem(item) {
     category: normalizeCategory(item.category),
     completed: Boolean(item.completed),
   };
+}
+
+async function loadCloudShoppingItems() {
+  const { data, error } = await dataContext.client
+    .from("shopping_items")
+    .select("id, name, quantity, unit, category, completed, created_at")
+    .eq("household_id", dataContext.householdId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  shoppingItems = (data || []).map(normalizeCloudItem);
+}
+
+async function importLocalShoppingItems() {
+  // 実行直前の共有リストを基準にすることで、再実行時も取り込み済みの商品をスキップします。
+  await loadCloudShoppingItems();
+  const existingNames = new Set(shoppingItems.map((item) => normalizeItemName(item.name).toLocaleLowerCase("ja")));
+  const rows = [];
+  let skippedCount = 0;
+
+  localShoppingItems.forEach((item) => {
+    const normalizedName = normalizeItemName(item.name).toLocaleLowerCase("ja");
+    if (existingNames.has(normalizedName)) {
+      skippedCount += 1;
+      return;
+    }
+    existingNames.add(normalizedName);
+    const quantity = normalizeQuantity(item.quantity);
+    rows.push({
+      household_id: dataContext.householdId,
+      name: normalizeItemName(item.name),
+      quantity: quantity === "" ? null : Number(quantity),
+      unit: quantity ? normalizeUnit(item.unit) : "",
+      category: normalizeCategory(item.category),
+      completed: Boolean(item.completed),
+      created_by: dataContext.userId,
+    });
+  });
+
+  if (rows.length > 0) {
+    const { error } = await dataContext.client.from("shopping_items").insert(rows);
+    if (error) throw error;
+  }
+  await loadCloudShoppingItems();
+  renderApp();
+  return { importedCount: rows.length, skippedCount };
 }
 
 function renderShoppingList() {
@@ -382,6 +431,25 @@ deleteCompletedButton.addEventListener("click", async () => {
   }
 });
 
+importLocalListButton.addEventListener("click", async () => {
+  const confirmed = window.confirm("この端末に保存されている買い物リストを、家族の共有リストへ追加します。元のデータは削除されません。");
+  if (!confirmed) return;
+
+  importLocalListButton.disabled = true;
+  importResult.classList.remove("error");
+  importResult.textContent = "共有リストへ取り込んでいます…";
+  try {
+    const { importedCount, skippedCount } = await importLocalShoppingItems();
+    importResult.textContent = `${importedCount}件を共有リストへ取り込みました。${skippedCount}件はすでに存在するためスキップしました。`;
+  } catch (error) {
+    console.error("この端末の買い物リストを取り込めませんでした。", error);
+    importResult.classList.add("error");
+    importResult.textContent = "リストを取り込めませんでした。通信状態を確認してもう一度お試しください。";
+  } finally {
+    importLocalListButton.disabled = false;
+  }
+});
+
 async function initializeApp() {
   setControlsDisabled(true);
   shoppingItems = [];
@@ -395,14 +463,9 @@ async function initializeApp() {
     saveShoppingList();
   } else if (context.mode === "cloud") {
     try {
-      const { data, error } = await context.client
-        .from("shopping_items")
-        .select("id, name, quantity, unit, category, completed, created_at")
-        .eq("household_id", context.householdId)
-        .order("created_at", { ascending: true });
-      if (error) throw error;
-      shoppingItems = (data || []).map(normalizeCloudItem);
+      await loadCloudShoppingItems();
       window.shoppingCloud.setListStatus("ready", context.householdName);
+      localImportSection.hidden = localShoppingItems.length === 0;
     } catch (error) {
       dataContext = { mode: "unavailable" };
       window.shoppingCloud.setListStatus("error", context.householdName, error);
