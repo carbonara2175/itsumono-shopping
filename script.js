@@ -52,6 +52,7 @@ function loadFromStorage(key, defaultValue) {
 
 let shoppingItems = loadFromStorage(STORAGE_KEYS.shoppingList, []);
 let itemHistory = loadFromStorage(STORAGE_KEYS.itemHistory, {});
+let dataContext = { mode: "initializing" };
 
 // 古い・壊れた保存データがあってもアプリを使えるよう、必要な形かを確認します。
 if (!Array.isArray(shoppingItems)) shoppingItems = [];
@@ -80,14 +81,18 @@ itemHistory = Object.fromEntries(Object.entries(itemHistory)
       lastCategory: normalizeCategory(data.lastCategory),
     }];
   }));
+const localShoppingItems = shoppingItems;
 
-function saveData() {
+function saveShoppingList() {
   localStorage.setItem(STORAGE_KEYS.shoppingList, JSON.stringify(shoppingItems));
+}
+
+function saveItemHistory() {
   localStorage.setItem(STORAGE_KEYS.itemHistory, JSON.stringify(itemHistory));
 }
 
-// 読み込んだv1.0データも、以後は数量・単位を持つv1.1形式として保存します。
-saveData();
+// 「いつもの商品」はログイン状態にかかわらず、この端末の履歴を使用します。
+saveItemHistory();
 
 function normalizeItemName(name) {
   return name.trim().replace(/\s+/g, " ");
@@ -134,7 +139,18 @@ function prepareFrequentItem(name, quantity = "", unit = "", category = DEFAULT_
 }
 
 // 商品追加フォームで確定した内容を買い物リストへ追加します。
-function addItem(name, quantity = "", unit = "", category = DEFAULT_CATEGORY) {
+function updateItemHistory(name, quantity, unit, category) {
+  const previousHistory = itemHistory[name];
+  itemHistory[name] = {
+    count: (Number(previousHistory?.count) || 0) + 1,
+    lastQuantity: quantity,
+    lastUnit: unit,
+    lastCategory: category,
+  };
+  saveItemHistory();
+}
+
+async function addItem(name, quantity = "", unit = "", category = DEFAULT_CATEGORY) {
   const cleanName = normalizeItemName(name);
   const cleanQuantity = normalizeQuantity(quantity);
   const cleanUnit = cleanQuantity ? normalizeUnit(unit) : "";
@@ -145,37 +161,86 @@ function addItem(name, quantity = "", unit = "", category = DEFAULT_CATEGORY) {
     formMessage.textContent = "商品名を入力してください。";
     return false;
   }
+  if (cleanName.length > 50) {
+    formMessage.textContent = "商品名は50文字以内で入力してください。";
+    return false;
+  }
   if (isAlreadyListed(cleanName)) {
     formMessage.textContent = `「${cleanName}」はすでにリストにあります。`;
     return false;
   }
 
-  shoppingItems.push({ id: createItemId(), name: cleanName, quantity: cleanQuantity, unit: cleanUnit, category: cleanCategory, completed: false });
-  const previousHistory = itemHistory[cleanName];
-  itemHistory[cleanName] = {
-    count: (Number(previousHistory?.count) || 0) + 1,
-    lastQuantity: cleanQuantity,
-    lastUnit: cleanUnit,
-    lastCategory: cleanCategory,
-  };
-  saveData();
+  if (dataContext.mode === "cloud") {
+    const { data, error } = await dataContext.client
+      .from("shopping_items")
+      .insert({
+        household_id: dataContext.householdId,
+        name: cleanName,
+        quantity: cleanQuantity === "" ? null : Number(cleanQuantity),
+        unit: cleanUnit,
+        category: cleanCategory,
+        completed: false,
+        created_by: dataContext.userId,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    shoppingItems.push(normalizeCloudItem(data));
+  } else {
+    shoppingItems.push({ id: createItemId(), name: cleanName, quantity: cleanQuantity, unit: cleanUnit, category: cleanCategory, completed: false });
+    saveShoppingList();
+  }
+  updateItemHistory(cleanName, cleanQuantity, cleanUnit, cleanCategory);
   renderApp();
   return true;
 }
 
-function toggleItem(itemId) {
+async function toggleItem(itemId) {
   const targetItem = shoppingItems.find((item) => item.id === itemId);
   if (!targetItem) return;
-  targetItem.completed = !targetItem.completed;
-  saveData();
+  const completed = !targetItem.completed;
+  if (dataContext.mode === "cloud") {
+    const { data, error } = await dataContext.client
+      .from("shopping_items")
+      .update({ completed })
+      .eq("household_id", dataContext.householdId)
+      .eq("id", itemId)
+      .select()
+      .single();
+    if (error) throw error;
+    targetItem.completed = Boolean(data.completed);
+  } else {
+    targetItem.completed = completed;
+    saveShoppingList();
+  }
   renderShoppingList();
   renderFrequentItems();
 }
 
-function deleteCompletedItems() {
+async function deleteCompletedItems() {
+  if (dataContext.mode === "cloud") {
+    const { error } = await dataContext.client
+      .from("shopping_items")
+      .delete()
+      .eq("household_id", dataContext.householdId)
+      .eq("completed", true);
+    if (error) throw error;
+  }
   shoppingItems = shoppingItems.filter((item) => !item.completed);
-  saveData();
+  if (dataContext.mode === "local") saveShoppingList();
   renderApp();
+}
+
+function normalizeCloudItem(item) {
+  const quantity = normalizeQuantity(item.quantity);
+  return {
+    id: item.id,
+    name: normalizeItemName(item.name),
+    quantity,
+    unit: quantity ? normalizeUnit(item.unit) : "",
+    category: normalizeCategory(item.category),
+    completed: Boolean(item.completed),
+  };
 }
 
 function renderShoppingList() {
@@ -204,7 +269,17 @@ function renderShoppingList() {
       checkbox.type = "checkbox";
       checkbox.checked = Boolean(item.completed);
       checkbox.setAttribute("aria-label", `${item.name}を購入済みにする`);
-      checkbox.addEventListener("change", () => toggleItem(item.id));
+      checkbox.disabled = dataContext.mode === "initializing" || dataContext.mode === "unavailable";
+      checkbox.addEventListener("change", async () => {
+        checkbox.disabled = true;
+        try {
+          await toggleItem(item.id);
+        } catch (error) {
+          console.error("購入済み状態を更新できませんでした。", error);
+          formMessage.textContent = "購入済み状態を更新できませんでした。もう一度お試しください。";
+          renderShoppingList();
+        }
+      });
       const name = document.createElement("span");
       name.className = "item-name";
       const amount = formatAmount(item.quantity, item.unit);
@@ -221,7 +296,9 @@ function renderShoppingList() {
 
   emptyState.classList.toggle("hidden", shoppingItems.length > 0);
   itemCount.textContent = shoppingItems.length;
-  deleteCompletedButton.disabled = !shoppingItems.some((item) => item.completed);
+  deleteCompletedButton.disabled = dataContext.mode === "initializing"
+    || dataContext.mode === "unavailable"
+    || !shoppingItems.some((item) => item.completed);
 }
 
 function renderFrequentItems() {
@@ -266,19 +343,79 @@ function renderApp() {
   renderFrequentItems();
 }
 
-addItemForm.addEventListener("submit", (event) => {
+function setControlsDisabled(disabled) {
+  Array.from(addItemForm.elements).forEach((element) => { element.disabled = disabled; });
+  if (disabled) deleteCompletedButton.disabled = true;
+}
+
+addItemForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (addItem(itemNameInput.value, itemQuantityInput.value, itemUnitInput.value, itemCategoryInput.value)) {
-    itemNameInput.value = "";
-    itemQuantityInput.value = "";
-    itemUnitInput.value = "";
-    itemCategoryInput.value = "";
+  setControlsDisabled(true);
+  try {
+    if (await addItem(itemNameInput.value, itemQuantityInput.value, itemUnitInput.value, itemCategoryInput.value)) {
+      itemNameInput.value = "";
+      itemQuantityInput.value = "";
+      itemUnitInput.value = "";
+      itemCategoryInput.value = "";
+    }
+  } catch (error) {
+    console.error("商品を追加できませんでした。", error);
+    formMessage.textContent = "商品を追加できませんでした。通信状態を確認してもう一度お試しください。";
+  } finally {
+    setControlsDisabled(false);
+    renderShoppingList();
+    itemNameInput.focus();
   }
-  itemNameInput.focus();
 });
 
 itemNameInput.addEventListener("input", () => { formMessage.textContent = ""; });
-deleteCompletedButton.addEventListener("click", deleteCompletedItems);
+deleteCompletedButton.addEventListener("click", async () => {
+  setControlsDisabled(true);
+  try {
+    await deleteCompletedItems();
+  } catch (error) {
+    console.error("購入済みの商品を削除できませんでした。", error);
+    formMessage.textContent = "購入済みの商品を削除できませんでした。もう一度お試しください。";
+  } finally {
+    setControlsDisabled(false);
+    renderShoppingList();
+  }
+});
 
-// ページを開いたとき、保存済みの内容を画面に表示します。
-renderApp();
+async function initializeApp() {
+  setControlsDisabled(true);
+  shoppingItems = [];
+  renderApp();
+
+  const context = await window.shoppingCloud.getContext();
+  dataContext = context;
+  if (context.mode === "local") {
+    shoppingItems = localShoppingItems;
+    // ローカルモードでのみ、旧形式を現在の形式へ整えて保存します。
+    saveShoppingList();
+  } else if (context.mode === "cloud") {
+    try {
+      const { data, error } = await context.client
+        .from("shopping_items")
+        .select("id, name, quantity, unit, category, completed, created_at")
+        .eq("household_id", context.householdId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      shoppingItems = (data || []).map(normalizeCloudItem);
+      window.shoppingCloud.setListStatus("ready", context.householdName);
+    } catch (error) {
+      dataContext = { mode: "unavailable" };
+      window.shoppingCloud.setListStatus("error", context.householdName, error);
+    }
+  }
+
+  setControlsDisabled(dataContext.mode === "unavailable");
+  renderApp();
+}
+
+// 認証状態を確認してから、ローカルまたは家族共有のリストを表示します。
+initializeApp().catch((error) => {
+  dataContext = { mode: "unavailable" };
+  setControlsDisabled(true);
+  console.error("買い物リストを初期化できませんでした。", error);
+});
